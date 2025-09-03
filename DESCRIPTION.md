@@ -38,3 +38,4 @@ MIT License
 ---
 
 **标签**: kook, music-bot, web-console, flask, python, netease-music, voice-chat, discord-alternative
+
