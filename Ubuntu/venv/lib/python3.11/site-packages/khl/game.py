@@ -1,0 +1,26 @@
+"""game: components used in playing status"""
+from typing import List
+
+
+class Game:
+    """represents a game used in playing state"""
+    id: int
+    name: str
+    type: int
+    options: str
+    kmhook_admin: bool
+    process_name: List[str]
+    product_name: List[str]
+    icon: str
+
+    def __init__(self, **kwargs) -> None:
+        self.id = kwargs.get('id', '')
+        self.name = kwargs.get('name', '')
+        self.type = kwargs.get('type', 1)
+        self.options = kwargs.get('options', '')
+        self.product_name = kwargs.get('product_name', [])
+        self.icon = kwargs.get('icon', '')
+
+    def __repr__(self):
+        return f'Game(id={self.id}, name="{self.name}", type={self.type}, options="{self.options}",' \
+               f' product_name={self.product_name}, icon="{self.icon}")'

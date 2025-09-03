@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>系统监控 - KOOK音乐控制台</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            background-color: #f8f9fa;
+            padding: 20px;
+        }
+        .card {
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .metric-card {
+            text-align: center;
+            padding: 20px;
+        }
+        .metric-value {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .metric-label {
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+        }
+        .status-ok { background-color: #28a745; }
+        .status-warning { background-color: #ffc107; }
+        .status-error { background-color: #dc3545; }
+        .terminal-container {
+            max-height: 400px;
+            overflow-y: auto;
+            background-color: #000000;
+            color: #ffffff;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            padding: 15px;
+        }
+        .terminal-output {
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.0;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .terminal-prompt {
+            color: #00ff00;
+            font-weight: bold;
+        }
+        .terminal-command {
+            color: #ffffff;
+        }
+        .terminal-output-text {
+            color: #cccccc;
+            display: inline-block;
+            vertical-align: top;
+        }
+        .terminal-error {
+            color: #ff6b6b;
+        }
+        .terminal-warning {
+            color: #ffd93d;
+        }
+        .terminal-info {
+            color: #6bcf7f;
+        }
+        .terminal-debug {
+            color: #74c0fc;
+        }
+        .timestamp {
+            color: #666;
+            font-size: 11px;
+            margin-right: 5px;
+        }
+        .line-number {
+            color: #555;
+            font-size: 11px;
+            margin-right: 5px;
+            user-select: none;
+            display: inline-block;
+            vertical-align: top;
+        }
+        .chart-container {
+            position: relative;
+            height: 200px;
+            margin: 20px 0;
+        }
+        .nav-link {
+            color: #495057;
+        }
+        .nav-link.active {
+            color: #007bff;
+            font-weight: bold;
+        }
+
+        /* 旋转动画 */
+        .spinning {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* 日志状态指示器样式 */
+        #log-status-badge {
+            font-size: 0.75em;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+
+        /* 日志条目淡入动画 */
+        .log-entry {
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <!-- 导航栏 -->
+        <nav class="navbar navbar-expand-lg navbar-light bg-white mb-4">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="/">
+                    <i class="bi bi-music-note-beamed"></i> KOOK音乐控制台
+                </a>
+                <div class="navbar-nav ms-auto">
+                    <a class="nav-link" href="/dashboard">
+                        <i class="bi bi-speedometer2"></i> 控制台
+                    </a>
+                    <a class="nav-link active" href="/monitor">
+                        <i class="bi bi-graph-up"></i> 监控
+                    </a>
+                </div>
+            </div>
+        </nav>
+
+        <!-- 系统状态概览 -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card metric-card">
+                    <div class="metric-value text-primary" id="cpu-usage">--</div>
+                    <div class="metric-label">CPU 使用率</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card metric-card">
+                    <div class="metric-value text-info" id="memory-usage">--</div>
+                    <div class="metric-label">内存使用率</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card metric-card">
+                    <div class="metric-value text-success" id="disk-usage">--</div>
+                    <div class="metric-label">磁盘使用率</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card metric-card">
+                    <div class="metric-value text-warning" id="process-uptime">--</div>
+                    <div class="metric-label">进程运行时间</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 详细监控信息 -->
+        <div class="row">
+            <!-- 左侧：系统资源图表 -->
+            <div class="col-md-8">
+                <!-- CPU和内存使用率图表 -->
+                <div class="card">
+                    <div class="card-header">
+                        <i class="bi bi-graph-up"></i> 系统资源使用率
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="resourceChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 网络流量图表 -->
+                <div class="card">
+                    <div class="card-header">
+                        <i class="bi bi-wifi"></i> 网络流量
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="networkChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右侧：状态信息和日志 -->
+            <div class="col-md-4">
+                <!-- 系统状态 -->
+                <div class="card">
+                    <div class="card-header">
+                        <i class="bi bi-check-circle"></i> 系统状态
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <span class="status-indicator status-ok"></span>
+                            <strong>系统状态:</strong> <span id="system-status">正常</span>
+                        </div>
+                        <div class="mb-3">
+                            <span class="status-indicator status-ok"></span>
+                            <strong>进程状态:</strong> <span id="process-status">运行中</span>
+                        </div>
+                        <div class="mb-3">
+                            <span class="status-indicator status-ok"></span>
+                            <strong>音频缓存:</strong> <span id="cache-status">正常</span>
+                        </div>
+                        <div class="mb-3">
+                            <span class="status-indicator status-ok"></span>
+                            <strong>播放状态:</strong> <span id="playback-status">正常</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 播放统计 -->
+                <div class="card">
+                    <div class="card-header">
+                        <i class="bi bi-music-note-list"></i> 播放统计
+                    </div>
+                    <div class="card-body">
+                        <div class="row text-center">
+                            <div class="col-4">
+                                <div class="metric-value text-primary" id="active-guilds">0</div>
+                                <div class="metric-label">活跃服务器</div>
+                            </div>
+                            <div class="col-4">
+                                <div class="metric-value text-success" id="playing-songs">0</div>
+                                <div class="metric-label">正在播放</div>
+                            </div>
+                            <div class="col-4">
+                                <div class="metric-value text-info" id="queued-songs">0</div>
+                                <div class="metric-label">队列中</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 音频缓存信息 -->
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span><i class="bi bi-hdd"></i> 音频缓存</span>
+                        <button class="btn btn-outline-warning btn-sm me-2" id="manual-cleanup-btn">
+                            <i class="bi bi-arrow-clockwise"></i> 手动清理
+                        </button>
+                        <button class="btn btn-outline-success btn-sm" id="test-cache-btn">
+                            <i class="bi bi-play-circle"></i> 测试缓存
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-2">
+                            <strong>缓存数量:</strong> <span id="cache-count">0</span> / <span id="cache-max">3</span>
+                        </div>
+                        <div class="mb-2">
+                            <strong>缓存大小:</strong> <span id="cache-size">0 MB</span>
+                        </div>
+                        <div class="progress mb-2">
+                            <div class="progress-bar" id="cache-progress" style="width: 0%"></div>
+                        </div>
+                        <div class="mb-2">
+                            <strong>清理阈值:</strong> <span id="cleanup-threshold">3</span> 首歌曲
+                        </div>
+                        <div class="mb-2">
+                            <strong>播放计数:</strong> <span id="play-counts">无</span>
+                        </div>
+                        <div class="input-group input-group-sm">
+                            <input type="number" class="form-control" id="threshold-input" placeholder="清理阈值" min="1" max="10" value="3">
+                            <button class="btn btn-outline-primary" id="update-threshold-btn">
+                                <i class="bi bi-gear"></i> 更新
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 终端输出监控 -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span>
+                            <i class="bi bi-terminal"></i> 终端输出
+                            <span class="badge bg-success ms-2" id="terminal-status-badge">
+                                <i class="bi bi-arrow-clockwise"></i> 实时更新
+                            </span>
+                        </span>
+                        <div>
+                            <button class="btn btn-outline-success btn-sm me-2" id="connect-terminal-btn">
+                                <i class="bi bi-play-circle"></i> 连接
+                            </button>
+                            <button class="btn btn-warning btn-sm me-2" id="auto-scroll-terminal-btn">
+                                <i class="bi bi-arrow-down-circle-fill"></i> 自动滚动
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="terminal-container" id="terminal-container">
+                            <div class="terminal-output" id="terminal-output">
+                                <div class="terminal-line">
+                                    <span class="timestamp">[系统]</span>
+                                    <span class="terminal-info">终端输出显示已就绪，点击"连接"开始实时显示...</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap & jQuery JS -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- 自定义JS -->
+    <script src="{{ url_for('static', filename='js/monitor.js', v='1.0') }}"></script>
+</body>
+</html>

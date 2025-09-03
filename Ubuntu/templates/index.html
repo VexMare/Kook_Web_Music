@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KOOK音乐机器人 - Web控制台</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="bg-dark text-light">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-12 text-center my-5">
+                <h1 class="display-4">KOOK音乐机器人</h1>
+                <p class="lead">Web控制台</p>
+                <div class="mt-5">
+                    <a href="{{ url_for('dashboard') }}" class="btn btn-primary btn-lg me-3">
+                        <i class="bi bi-music-note-list me-2"></i>进入控制台
+                    </a>
+                    <a href="/monitor" class="btn btn-outline-info btn-lg">
+                        <i class="bi bi-graph-up me-2"></i>系统监控
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mt-5">
+            <div class="col-md-4">
+                <div class="card bg-dark border-secondary mb-4">
+                    <div class="card-body text-center">
+                        <i class="bi bi-music-note-beamed display-4 mb-3"></i>
+                        <h3>音乐播放</h3>
+                        <p>支持网易云音乐、本地音乐播放，提供丰富的音乐资源</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card bg-dark border-secondary mb-4">
+                    <div class="card-body text-center">
+                        <i class="bi bi-list-ul display-4 mb-3"></i>
+                        <h3>歌单管理</h3>
+                        <p>支持导入网易云歌单，创建自定义歌单，方便管理您的音乐</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card bg-dark border-secondary mb-4">
+                    <div class="card-body text-center">
+                        <i class="bi bi-gear display-4 mb-3"></i>
+                        <h3>远程控制</h3>
+                        <p>通过Web界面远程控制机器人，无需在KOOK中输入命令</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <footer class="mt-5 text-center text-muted">
+            <p>KOOK音乐机器人 Web控制台 &copy; 2025</p>
+        </footer>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
